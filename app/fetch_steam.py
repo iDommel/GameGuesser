@@ -40,6 +40,14 @@ async def randomize_current_game():
 
     return {"status": f"Current game randomized successfully"}
 
+@app.post("/check_appid")
+async def check_appid(pseudo: str, appid: int):
+    result = db['current-game'].find_one({"appid": appid})
+    if result is None:
+        return {"status": "Wrong guess"}
+    else:
+        return {"status": "win"}
+
 @app.get("/fill_db")
 async def fill_db():
     for appid in top100:
