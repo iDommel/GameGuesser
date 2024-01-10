@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+
+[tool.setuptools]
+package-dir = {"" = "app"}
+
+
+[project]
+name = "GameGuesser"
+version = "0.1.0"
+description = "Game guesser minigame"
+authors = [
+    {name = "iona", email = "iona.dommel-prioux@epitech.eu"}
+]
+
+license = {text = "MIT"}
+readme = "README.md"
+dependencies = [
+    "fastapi~=0.104.0",
+    "uvicorn~=0.24.0",
+    "requests~=2.31.0",
+    "pymongo~=4.6.1"
+]
