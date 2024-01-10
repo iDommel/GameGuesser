@@ -40,6 +40,20 @@ async def randomize_current_game():
 
     return {"status": f"Current game randomized successfully"}
 
+@app.post("/create_history")
+async def create_history(player_name: str):
+    game_name = ""
+    game_developers = []
+    game_publishers = []
+    game_price = -1
+    game_score = -1
+    game_genre = []
+    game_categories = []
+    game_release = -1
+    db['history'].insert_one({"player_name": player_name, "game_name": game_name, "game_developers": game_developers, "game_publishers": game_publishers, "game_price": game_price, "game_score": game_score, "game_genre": game_genre, "game_categories": game_categories, "game_release": game_release})
+
+    return {"status": f"History created successfully for player {player_name}"}
+
 @app.get("/fill_db")
 async def fill_db():
     for appid in top100:
