@@ -218,14 +218,14 @@ async def fill_db_user(steamid: int):
             if response_user_game.status_code == 200:
                 data = response_user_game.json()
                 achievements_list = []
-                if data['playerstats']['success'] is True:
+                if 'achievements' in data['playerstats']:
                     for achievement in data['playerstats']['achievements']:
                         apiname = achievement['apiname']
                         achieved = achievement['achieved']
                         unlocktime = achievement['unlocktime']   
                         achievements_list.append({"apiname": apiname, "achieved": achieved, "unlocktime": unlocktime})
                 games_list.append({"appid": appid, "playtime_forever": playtime_forever, "steamid": steamid, "achievements_list": achievements_list})
-            print(f"{playtime_forever}")
+
 
         result_user = db.user.insert_one({"steamid": steamid, "name": player_name, "profileUrl": profile_url, "avatar": avatar, "country": country, "game_count": games_count})
         result_user_games = db["user-games"].insert_one({"game_list": games_list})
