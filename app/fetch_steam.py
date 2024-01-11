@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 import requests
 from pymongo import MongoClient
@@ -14,6 +14,28 @@ app = FastAPI()
 uri = 'mongodb+srv://admin:123123123123@testcluster.ggkzplp.mongodb.net/game_guesser'
 client = MongoClient(uri)
 db = client['game_guesser']  # Replace with your database name
+
+@app.get("/games")
+def get_games():
+    games_cursor = db['games'].find({}, {"_id": 0})
+    games = list(games_cursor)
+    game_count = db['games'].count_documents({})
+
+    print("game_count", game_count)
+    print("games", games)
+
+    if game_count == 0:
+        raise HTTPException(status_code=404, detail="No games found")
+    else:
+        return JSONResponse(status_code=200, content=games)
+
+@app.get("/games/{appid}")
+async def get_game(appid: int):
+    result = db['games'].find_one({"appid": appid}, {"_id": 0})
+    if result is None:
+        return HTTPException(status_code=404, detail=f"Game not found for this AppID: {appid}")
+    else:
+        return JSONResponse(status_code=201, content=result)
 
 @app.post("/set_current_game")
 async def set_current_game(appid: int):
