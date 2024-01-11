@@ -18,3 +18,17 @@ on windows:
 ### Run the server:
 `.main.py`
 
+------
+
+## Front part
+
+go in gameguesserfront folder
+
+#### install the dependencices :
+
+`npm i`
+
+#### run the front :
+
+` npm start`
+open your browser on `localhost:8080`</s>
