@@ -103,24 +103,23 @@ const compGamesNumbers = (data: number, compNumber: number): answerNumberType =>
 }
 
 function App() {
-  
+
   const [searchGame, setSearchGame] = useState("")
   const [selectedGames, setSelectedGames] = useState<gameTypeAnswer[] | undefined>(undefined)
   const [gameToguess, setGameToGuess] = useState<gameType | undefined>(undefined)
   const [gamesData, setGamesData] = useState<gameType[]>([])
-  
+
   const getGames = async () => {
     const dbData = await fetch('http://localhost:8000/games')
     const gamesJson = await dbData.json()
     const formattedData: gameType[]= []
-
     for (let index = 0; index < gamesJson.length; index++) {
       const id = gamesJson[index].appId as number
       const data: gameType = {
         appId: gamesJson[index].appId,
         categories: gamesJson[index].categories,
         developers: gamesJson[index].developers,
-        tags: gamesJson[index].tags,
+        tags: gamesJson[index].tags as string[],
         name: gamesJson[index].name,
         publishers: gamesJson[index].publishers,
         release: gamesJson[index].release,
@@ -158,7 +157,7 @@ function App() {
     getGames()
     getGameToGuess()
   }, [])
-  
+
   const compGames = (searchGame: gameType) => {
     console.log("searchGame : ", searchGame.categories)
     if (gameToguess != undefined && searchGame.name.toLowerCase() === gameToguess.name.toLowerCase()) {
@@ -200,7 +199,7 @@ function App() {
     console.log(`selected ${value}  key = ${(option as gameType).key} release : ${(option as gameType).price}`);
     console.log("searchGame : ", (option as gameType).appId)
     const gameAnswer = compGames(option as gameType)
-    
+
     if (selectedGames == undefined) {
       if (gameAnswer != undefined) {
         setSelectedGames([gameAnswer]);
@@ -212,16 +211,16 @@ function App() {
 
     }
   };
-  
+
   const onSearch = (label: string) => {
     console.log('search:', label);
     setSearchGame(label)
   };
-  
+
   // Filter `option.label` match the user type `input`
   const filterOption = (input: string, option?: { label: string; value: any }) =>
     (option?.label ?? '').toLowerCase().includes(input.toLowerCase());
-  
+
   const FillCardLabels = ({label, labelName, isWin}: FillCardLabelsProps) => {
     return (
       <Card title={labelName} bordered={false} style={isWin ? {backgroundColor:"green", flexDirection:"row"} : {backgroundColor:"white", flexDirection:"row"}}>
