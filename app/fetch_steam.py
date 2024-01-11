@@ -59,6 +59,14 @@ async def set_current_game(appid: int):
         db['current-game'].insert_one({"appid": appid, "game_id": current_game_id})
         return {"status": f"Current game set successfully: {str(appid)}"}
 
+@app.get("/get_current_game")
+async def get_current_game():
+    result = db['current-game'].find_one({})
+    if result is None:
+        raise HTTPException(status_code=404, detail="No current game found")
+    else:
+        return JSONResponse(status_code=201, content=result)
+
 @app.get("/randomize_current_game")
 async def randomize_current_game():
     games = db['games'].find({})
@@ -215,7 +223,7 @@ async def fill_db_user(steamid: int):
         profile_url = data['response']['players'][0]['profileurl']
         avatar = data['response']['players'][0]['avatarfull']
         country = data['response']['players'][0]['loccountrycode']
-        
+
     if response_games.status_code == 200:
         data = response_games.json()
         games_count = data['response']['game_count']
@@ -232,7 +240,7 @@ async def fill_db_user(steamid: int):
                     for achievement in data['playerstats']['achievements']:
                         apiname = achievement['apiname']
                         achieved = achievement['achieved']
-                        unlocktime = achievement['unlocktime']   
+                        unlocktime = achievement['unlocktime']
                         achievements_list.append({"apiname": apiname, "achieved": achieved, "unlocktime": unlocktime})
                 games_list.append({"appid": appid, "playtime_forever": playtime_forever, "steamid": steamid, "achievements_list": achievements_list})
             print(f"{playtime_forever}")
