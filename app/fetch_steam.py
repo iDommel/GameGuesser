@@ -61,11 +61,14 @@ async def set_current_game(appid: int):
 
 @app.get("/get_current_game")
 async def get_current_game():
-    result = db['current-game'].find_one({}, {"_id": 0})
-    if result is None:
+    current_game = db['current-game'].find_one({})
+    if current_game is None:
         raise HTTPException(status_code=404, detail="No current game found")
+    correct_game = db['games'].find_one({"appid": current_game["appid"]}, {"_id": 0})
+    if correct_game is None:
+        raise HTTPException(status_code=404, detail="Current game is invalid")
     else:
-        return JSONResponse(status_code=201, content=result)
+        return JSONResponse(status_code=201, content=correct_game)
 
 @app.get("/randomize_current_game")
 async def randomize_current_game():
