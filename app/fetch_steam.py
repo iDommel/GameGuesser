@@ -15,12 +15,35 @@ uri = 'mongodb+srv://admin:123123123123@testcluster.ggkzplp.mongodb.net/game_gue
 client = MongoClient(uri)
 db = client['game_guesser']  # Replace with your database name
 
+@app.get("/games")
+def get_games():
+    games_cursor = db['games'].find({}, {"_id": 0})
+    games = list(games_cursor)
+    game_count = db['games'].count_documents({})
+
+    print("game_count", game_count)
+    print("games", games)
+
+    if game_count == 0:
+        raise HTTPException(status_code=404, detail="No games found")
+    else:
+        return JSONResponse(status_code=200, content=games)
+
+@app.get("/games/{appid}")
+async def get_game(appid: int):
+    result = db['games'].find_one({"appid": appid}, {"_id": 0})
+    if result is None:
+        return HTTPException(status_code=404, detail=f"Game not found for this AppID: {appid}")
+    else:
+        return JSONResponse(status_code=201, content=result)
+
 @app.post("/set_current_game")
 async def set_current_game(appid: int):
     result = db['games'].find_one({"appid": appid})
     if result is None:
         return {"status": "AppID not found"}
     else:
+        db['history'].delete_many({})
         current_game_id = result["_id"]
         db['current-game'].delete_many({})
         db['current-game'].insert_one({"appid": appid, "game_id": current_game_id})
@@ -30,7 +53,7 @@ async def set_current_game(appid: int):
 async def randomize_current_game():
     games = db['games'].find({})
     game_count = db['games'].count_documents({})
-
+    db['history'].delete_many({})
     if game_count == 0:
         return {"status": "No games found"}
 
@@ -110,9 +133,9 @@ async def guess(player_name: str, appid: int):
         db['history'].find_one_and_replace({"player_name": player_name}, {"player_name": player_name, "name": name, "developers": developers, "publishers": publishers, "price": price, "score": score, "genres": genres, "categories": categories, "release": release})
         currentHistory = db['history'].find_one({"player_name": player_name}, {"_id": 0})
 
-        return JSONResponse(content=currentHistory)
+        return JSONResponse(status_code=201, content=currentHistory)
     else:
-        return {"status": "win"}
+        return JSONResponse(status_code=201, content={"status": "Correct guess ! You win !"})
 
 def serialize_game_data(appid, data):
     game_data = data[str(appid)]['data']
