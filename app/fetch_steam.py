@@ -5,8 +5,6 @@ import requests
 from pymongo import MongoClient
 from urllib.parse import quote_plus
 import random
-import json
-from fastapi.responses import JSONResponse
 top100=[10,60,70,80,240,320,340,400,440,550,570,620,730,4000,8930,49520,72850,96000,105600,107410,108600,203160,204360,218230,218620,221100,224260,227300,227940,230410,236390,238960,239140,242760,250900,251570,252490,252950,255710,261550,271590,272060,275390,289070,291550,292030,301520,304050,304930,322330,346110,359550,367520,377160,381210,386360,413150,417910,431960,433850,438100,444090,444200,466240,477160,489520,532210,550650,552990,578080,582010,632360,648800,739630,755790,814380,892970,901583,945360,990080,1046930,1063730,1085660,1086940,1089350,1091500,1097150,1172470,1174180,1203220,1222670,1238810,1240440,1245620,1468810,1517290,1599340,1811260,1938090,1966720]
 
 app = FastAPI()
@@ -165,4 +163,41 @@ async def fill_db():
             print(f"AppID: {appid}, Erreur lors de la requête API. Code de statut: {response.status_code}")
 
 
+@app.get("/fill_db_user")
+async def fill_db_user(steamid: int):
+    url_games = f'http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=EFEC8A77131A5A757FE30442C93005E1&steamid={steamid}&format=json'
+    url_user = f'http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=EFEC8A77131A5A757FE30442C93005E1&steamids={steamid}'
+    response_games = requests.get(url_games)
+    response_user = requests.get(url_user)
+
+    if response_user.status_code == 200:
+        data = response_user.json()
+        steamid = data['response']['players'][0]['steamid']
+        player_name = data['response']['players'][0]['personaname']
+        profile_url = data['response']['players'][0]['profileurl']
+        avatar = data['response']['players'][0]['avatarfull']
+        country = data['response']['players'][0]['loccountrycode']
+
+    if response_games.status_code == 200:
+        data = response_games.json()
+        games_count = data['response']['game_count']
+        games_list = []
+        for game in data['response']['games']:
+            appid = game['appid']
+            playtime_forever = game['playtime_forever']
+            url_user_game = f'http://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/?appid={appid}&key=EFEC8A77131A5A757FE30442C93005E1&steamid={steamid}'
+            response_user_game = requests.get(url_user_game)
+            if response_user.status_code == 200:
+                data = response_user.json()
+                achievements_list = []
+                for achievement in data['playerstats']['achievements']:
+                    apiname = achievement['apiname']
+                    achieved = achievement['achieved']
+                    unlocktime = achievement['unlocktime']
+                    achievements_list.append({"apiname": apiname, "achieved": achieved, "unlocktime": unlocktime})
+                games_list.append({"appid": appid, "playtime_forever": playtime_forever, "steamid": steamid, "achievements_list": achievements_list})
+            print(f"{playtime_forever}")
+
+        result_user = db.user.insert_one({"steamid": steamid, "name": player_name, "profileUrl": profile_url, "avatar": avatar, "country": country, "game_count": games_count})
+        result_user_games = db["user-games"].insert_one({"game_list": games_list})
     return {"status": "Data fetched and stored successfully"}
