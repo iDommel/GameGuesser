@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 import requests
 from pymongo import MongoClient
@@ -43,61 +43,106 @@ async def randomize_current_game():
 
     return {"status": f"Current game randomized successfully"}
 
+def initialize_history(player_name: str):
+    db['history'].insert_one({"player_name": player_name,
+                              "name": "",
+                              "developers": [],
+                              "publishers": [],
+                              "price": -1,
+                              "score": -1,
+                              "genres": [],
+                              "categories": [],
+                              "release": -1})
+
 @app.post("/guess")
 async def guess(player_name: str, appid: int):
     guessed_game = db['games'].find_one({"appid": appid})
     current_game = db['current-game'].find_one({})
     correct_game = db['games'].find_one({"appid": current_game["appid"]})
-
     result = db['current-game'].find_one({"appid": appid})
     if guessed_game is None:
         return {"status": "AppID not found"}
     if result is None:
 
+        print("guessed_game name", guessed_game["name"])
+        print("correct_game name", correct_game["name"])
         currentHistory = db['history'].find_one({"player_name": player_name})
-        name = ""
-        developers = []
-        publishers = []
-        price = -1
-        score = -1
-        genres = []
-        categories = []
-        release = -1
+
+
         if currentHistory is None:
-            db['history'].insert_one({"player_name": player_name, "name": name, "developers": developers, "publishers": publishers, "price": price, "score": score, "genres": genres, "categories": categories, "release": release})
-        else:
-            print("guessed_game name", guessed_game["name"])
-            print("correct_game name", correct_game["name"])
-            if currentHistory["name"] == "" and guessed_game["name"] == correct_game["name"]:
+            initialize_history(player_name)
+            currentHistory = db['history'].find_one({"player_name": player_name})
+
+        name = currentHistory["name"]
+        developers = currentHistory["developers"]
+        publishers = currentHistory["publishers"]
+        price = currentHistory["price"]
+        score = currentHistory["score"]
+        genres = currentHistory["genres"]
+        categories = currentHistory["categories"]
+        release = currentHistory["release"]
+
+
+        if currentHistory["name"] == "" and guessed_game["name"] == correct_game["name"]:
                 name = guessed_game["name"]
-            if currentHistory["developers"] == []:
-                for developer in guessed_game["developers"]:
-                    if developer in correct_game["developers"]:
-                        developers.append(developer)
-            if currentHistory["publishers"] == []:
-                for publisher in guessed_game["publishers"]:
-                    if publisher in correct_game["publishers"]:
-                        publishers.append(publisher)
-            if currentHistory["price"] == -1 and guessed_game["price"] == correct_game["price"]:
-                price = guessed_game["price"]
-            if currentHistory["score"] == -1 and guessed_game["score"] == correct_game["score"]:
-                score = guessed_game["score"]
-            if currentHistory["genres"] == []:
-                for i in guessed_game["genres"]:
-                    if i in correct_game["genres"]:
-                        genres.append(i)
-            if currentHistory["categories"] == []:
-                for category in guessed_game["categories"]:
-                    if category in correct_game["categories"]:
-                        categories.append(category)
-            if currentHistory["release"] == -1 and guessed_game["release"] == correct_game["release"]:
-                release = guessed_game["release"]
+        if currentHistory["developers"] == []:
+            for developer in guessed_game["developers"]:
+                if developer in correct_game["developers"]:
+                    developers.append(developer)
+        if currentHistory["publishers"] == []:
+            for publisher in guessed_game["publishers"]:
+                if publisher in correct_game["publishers"]:
+                    publishers.append(publisher)
+        if currentHistory["price"] == -1 and guessed_game["price"] == correct_game["price"]:
+            price = guessed_game["price"]
+        if currentHistory["score"] == -1 and guessed_game["score"] == correct_game["score"]:
+            score = guessed_game["score"]
+        if currentHistory["genres"] == []:
+            for i in guessed_game["genres"]:
+                if i in correct_game["genres"]:
+                    genres.append(i)
+        if currentHistory["categories"] == []:
+            for category in guessed_game["categories"]:
+                if category in correct_game["categories"]:
+                    categories.append(category)
+        if currentHistory["release"] == -1 and guessed_game["release"] == correct_game["release"]:
+            release = guessed_game["release"]
         db['history'].find_one_and_replace({"player_name": player_name}, {"player_name": player_name, "name": name, "developers": developers, "publishers": publishers, "price": price, "score": score, "genres": genres, "categories": categories, "release": release})
         currentHistory = db['history'].find_one({"player_name": player_name}, {"_id": 0})
 
         return JSONResponse(content=currentHistory)
     else:
         return {"status": "win"}
+
+def serialize_game_data(appid, data):
+    game_data = data[str(appid)]['data']
+
+    # Ensure developers and publishers are lists
+    developers = game_data.get('developers', [])
+    publishers = game_data.get('publishers', [])
+
+    # Categories and Genres should also be lists
+    categories = [category.get('description') for category in game_data.get('categories', []) if category.get('description')]
+    genres = [genre.get('description') for genre in game_data.get('genres', []) if genre.get('description')]
+
+    serialized_data = {
+        "appid": appid,
+        "name": game_data.get('name', ''),
+        "developers": developers if isinstance(developers, list) else list(developers),
+        "publishers": publishers if isinstance(publishers, list) else list(publishers),
+        "price": game_data.get('price_overview', {}).get('final_formatted', 'Free'),
+        "score": game_data.get('metacritic', {}).get('score', None),
+        "categories": categories,
+        "genres": genres,
+        "release": game_data.get('release_date', {}).get('date', ''),
+        "required_age": game_data.get('required_age', '')
+    }
+    return serialized_data
+
+def update_companies(companies):
+    for company in companies:
+        if not db.companies.find_one({"name": company}):
+            db.companies.insert_one({"name": company})
 
 @app.get("/fill_db")
 async def fill_db():
@@ -109,37 +154,16 @@ async def fill_db():
             data = response.json()
 
             if data[str(appid)]['success']:
-                name = data[str(appid)]['data']['name']
-                developers = data[str(appid)]['data']['developers']
-                publishers = data[str(appid)]['data']['publishers']
-                if data[str(appid)]['data']['is_free'] is True:
-                    price = "Free"
-                elif data.get(str(appid), {}).get('data', {}).get('price_overview', {}).get('final_formatted') is not None:
-                    price = data[str(appid)]['data']['price_overview']['final_formatted']
-                else:
-                    price = "Free"
-                if data.get(str(appid), {}).get('data', {}).get('metacritic', {}).get('score') is not None:
-                    score = data[str(appid)]['data']['metacritic']['score']
-                categories = []
-                if data.get(str(appid), {}).get('data', {}).get('categories') is not None:
-                    for category in data[str(appid)]['data']['categories']:
-                        category_description = category.get('description')
-                        if category_description is not None:
-                            categories.append(category_description)
-                if data.get(str(appid), {}).get('data', {}).get('genres') is not None:
-                    genres = []
-                    for genre in data[str(appid)]['data']['genres']:
-                        genre_description = genre.get('description')
-                        if genre_description is not None:
-                            genres.append(genre_description)
-                release = data[str(appid)]['data']['release_date']['date']
-                required_age = data[str(appid)]['data']['required_age']
+                game_data = serialize_game_data(appid, data)
+                print(game_data)
+                # Update companies collection
+                update_companies(game_data['developers'] + game_data['publishers'])
 
-                result = db.games.insert_one({"appid": appid, "name": name, "developers": developers, "publishers": publishers, "price": price, "score": score, "categories": categories, "genres": genres, "release": release, "required_age": required_age})
+                # Insert game data into the games collection
+                db.games.insert_one(game_data)
             else:
-                print(f"AppID: {appid}, Erreur lors de la récupération des données.")
+                raise HTTPException(status_code=400, detail={f"AppID: {appid}, Error in data retrieval."})
         else:
-            print(f"AppID: {appid}, Erreur lors de la requête API. Code de statut: {response.status_code}")
-
+            raise HTTPException(status_code=400, detail={f"AppID: {appid}. API request error, check if appid is valid."})
 
     return {"status": "Data fetched and stored successfully"}
