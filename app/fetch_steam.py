@@ -159,7 +159,7 @@ def serialize_game_data(appid, data):
         "genres": genres,
         "release": game_data.get('release_date', {}).get('date', ''),
         "required_age": game_data.get('required_age', ''),
-        "image": game_data.get('capsule_imagev5', '')
+        # "image": game_data.get('capsule_imagev5', '')
     }
     return serialized_data
 
