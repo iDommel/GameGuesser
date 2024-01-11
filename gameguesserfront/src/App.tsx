@@ -225,8 +225,8 @@ function App() {
   const FillCardLabels = ({label, labelName, isWin}: FillCardLabelsProps) => {
     return (
       <Card title={labelName} bordered={false} style={isWin ? {backgroundColor:"green", flexDirection:"row"} : {backgroundColor:"white", flexDirection:"row"}}>
-        {label.map((item) => (
-          <p style={item.answer ? {backgroundColor:"green", margin: 5} : {backgroundColor:"red", margin: 5}}>{item.data}</p>
+        {label.map((item, index) => (
+          <p style={item.answer ? {backgroundColor:"green", margin: 5} : {backgroundColor:"red", margin: 5}} key={index}>{item.data}</p>
         ))}
       </Card>
     )
