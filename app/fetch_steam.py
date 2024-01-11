@@ -87,3 +87,42 @@ async def fill_db():
 
 
     return {"status": "Data fetched and stored successfully"}
+
+@app.get("/fill_db_user")
+async def fill_db_user(steamid: int):
+    url_games = f'http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=EFEC8A77131A5A757FE30442C93005E1&steamid={steamid}&format=json'
+    url_user = f'http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=EFEC8A77131A5A757FE30442C93005E1&steamids={steamid}'
+    response_games = requests.get(url_games)
+    response_user = requests.get(url_user)
+
+    if response_user.status_code == 200:
+        data = response_user.json()
+        steamid = data['response']['players'][0]['steamid']
+        player_name = data['response']['players'][0]['personaname']
+        profile_url = data['response']['players'][0]['profileurl']
+        avatar = data['response']['players'][0]['avatarfull']
+        country = data['response']['players'][0]['loccountrycode']
+        
+    if response_games.status_code == 200:
+        data = response_games.json()
+        games_count = data['response']['game_count']
+        games_list = []
+        for game in data['response']['games']:
+            appid = game['appid']
+            playtime_forever = game['playtime_forever']
+            url_user_game = f'http://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/?appid={appid}&key=EFEC8A77131A5A757FE30442C93005E1&steamid={steamid}'
+            response_user_game = requests.get(url_user_game)
+            if response_user.status_code == 200:
+                data = response_user.json()
+                achievements_list = []
+                for achievement in data['playerstats']['achievements']:
+                    apiname = achievement['apiname']
+                    achieved = achievement['achieved']
+                    unlocktime = achievement['unlocktime']   
+                    achievements_list.append({"apiname": apiname, "achieved": achieved, "unlocktime": unlocktime})
+                games_list.append({"appid": appid, "playtime_forever": playtime_forever, "steamid": steamid, "achievements_list": achievements_list})
+            print(f"{playtime_forever}")
+
+        result_user = db.user.insert_one({"steamid": steamid, "name": player_name, "profileUrl": profile_url, "avatar": avatar, "country": country, "game_count": games_count})
+        result_user_games = db["user-games"].insert_one({"game_list": games_list})
+    return {"status": "Data fetched and stored successfully"}
