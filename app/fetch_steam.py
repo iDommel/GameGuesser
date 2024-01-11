@@ -53,9 +53,8 @@ async def set_current_game(appid: int):
         return {"status": "AppID not found"}
     else:
         db['history'].delete_many({})
-        current_game_id = result["_id"]
         db['current-game'].delete_many({})
-        db['current-game'].insert_one({"appid": appid, "game_id": current_game_id})
+        db['current-game'].insert_one({"appid": appid})
         return {"status": f"Current game set successfully: {str(appid)}"}
 
 @app.get("/get_current_game")
@@ -80,9 +79,8 @@ async def randomize_current_game():
     random_index = random.randint(0, game_count - 1)
     random_game = games[random_index]
 
-    current_game_id = random_game["_id"]
     db['current-game'].delete_many({})
-    db['current-game'].insert_one({"appid": random_game["appid"], "game_id": current_game_id})
+    db['current-game'].insert_one({"appid": random_game["appid"]})
 
     return {"status": f"Current game randomized successfully"}
 
@@ -93,7 +91,6 @@ def initialize_history(player_name: str):
                               "publishers": [],
                               "price": -1,
                               "score": -1,
-                              "genres": [],
                               "categories": [],
                               "release": -1})
 
@@ -121,7 +118,6 @@ async def guess(player_name: str, appid: int):
         publishers = currentHistory["publishers"]
         price = currentHistory["price"]
         score = currentHistory["score"]
-        genres = currentHistory["genres"]
         categories = currentHistory["categories"]
         release = currentHistory["release"]
 
@@ -140,33 +136,27 @@ async def guess(player_name: str, appid: int):
             price = guessed_game["price"]
         if currentHistory["score"] == -1 and guessed_game["score"] == correct_game["score"]:
             score = guessed_game["score"]
-        if currentHistory["genres"] == []:
-            for i in guessed_game["genres"]:
-                if i in correct_game["genres"]:
-                    genres.append(i)
         if currentHistory["categories"] == []:
             for category in guessed_game["categories"]:
                 if category in correct_game["categories"]:
                     categories.append(category)
         if currentHistory["release"] == -1 and guessed_game["release"] == correct_game["release"]:
             release = guessed_game["release"]
-        db['history'].find_one_and_replace({"player_name": player_name}, {"player_name": player_name, "name": name, "developers": developers, "publishers": publishers, "price": price, "score": score, "genres": genres, "categories": categories, "release": release})
+        db['history'].find_one_and_replace({"player_name": player_name}, {"player_name": player_name, "name": name, "developers": developers, "publishers": publishers, "price": price, "score": score, "categories": categories, "release": release})
         currentHistory = db['history'].find_one({"player_name": player_name}, {"_id": 0})
 
         return JSONResponse(status_code=201, content=currentHistory)
     else:
         return JSONResponse(status_code=201, content={"status": "Correct guess ! You win !"})
 
-def serialize_game_data(appid, data):
-    game_data = data[str(appid)]['data']
+def serialize_game_data(appid, steamdata, steamspydata):
+    game_data = steamdata[str(appid)]['data']
 
     # Ensure developers and publishers are lists
     developers = game_data.get('developers', [])
     publishers = game_data.get('publishers', [])
 
-    # Categories and Genres should also be lists
     categories = [category.get('description') for category in game_data.get('categories', []) if category.get('description')]
-    genres = [genre.get('description') for genre in game_data.get('genres', []) if genre.get('description')]
 
     serialized_data = {
         "appid": appid,
@@ -176,7 +166,7 @@ def serialize_game_data(appid, data):
         "price": game_data.get('price_overview', {}).get('final_formatted', 'Free'),
         "score": game_data.get('metacritic', {}).get('score', None),
         "categories": categories,
-        "genres": genres,
+        "tags": list(steamspydata.get("tags", {}).keys()),
         "release": game_data.get('release_date', {}).get('date', ''),
         "required_age": game_data.get('required_age', '')
     }
@@ -190,14 +180,18 @@ def update_companies(companies):
 @app.get("/fill_db")
 async def fill_db():
     for appid in top100:
-        url = f'https://store.steampowered.com/api/appdetails?appids={appid}'
-        response = requests.get(url)
+        steam_url = f'https://store.steampowered.com/api/appdetails?appids={appid}'
+        steamspy_url= f"https://steamspy.com/api.php?request=appdetails&appid={appid}"
 
-        if response.status_code == 200:
-            data = response.json()
+        steam_response = requests.get(steam_url)
+        steamspy_response = requests.get(steamspy_url)
 
-            if data[str(appid)]['success']:
-                game_data = serialize_game_data(appid, data)
+        if steam_response.status_code == 200 and steamspy_response.status_code == 200:
+            steam_data = steam_response.json()
+            steamspy_data = steamspy_response.json()
+
+            if steam_data[str(appid)]['success']:
+                game_data = serialize_game_data(appid, steam_data, steamspy_data)
                 print(game_data)
                 # Update companies collection
                 update_companies(game_data['developers'] + game_data['publishers'])
