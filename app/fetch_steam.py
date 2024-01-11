@@ -21,6 +21,7 @@ async def set_current_game(appid: int):
     if result is None:
         return {"status": "AppID not found"}
     else:
+        db['history'].delete_many({})
         current_game_id = result["_id"]
         db['current-game'].delete_many({})
         db['current-game'].insert_one({"appid": appid, "game_id": current_game_id})
@@ -30,7 +31,7 @@ async def set_current_game(appid: int):
 async def randomize_current_game():
     games = db['games'].find({})
     game_count = db['games'].count_documents({})
-
+    db['history'].delete_many({})
     if game_count == 0:
         return {"status": "No games found"}
 
@@ -95,9 +96,9 @@ async def guess(player_name: str, appid: int):
         db['history'].find_one_and_replace({"player_name": player_name}, {"player_name": player_name, "name": name, "developers": developers, "publishers": publishers, "price": price, "score": score, "genres": genres, "categories": categories, "release": release})
         currentHistory = db['history'].find_one({"player_name": player_name}, {"_id": 0})
 
-        return JSONResponse(content=currentHistory)
+        return JSONResponse(status_code=201, content=currentHistory)
     else:
-        return {"status": "win"}
+        return JSONResponse(status_code=201, content={"status": "Correct guess ! You win !"})
 
 @app.get("/fill_db")
 async def fill_db():
