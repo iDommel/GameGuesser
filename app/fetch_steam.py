@@ -223,7 +223,8 @@ async def fill_db_user(steamid: int):
                         achieved = achievement['achieved']
                         unlocktime = achievement['unlocktime']   
                         achievements_list.append({"apiname": apiname, "achieved": achieved, "unlocktime": unlocktime})
-        result_user_games = db["user-games"].insert_one({"appid": appid, "playtime_forever": playtime_forever, "steamid": steamid, "achievements_list": achievements_list})
+            db["user-games"].insert_one({"appid": appid, "playtime_forever": playtime_forever, "steamid": steamid, "achievements_list": achievements_list})
+        print(f'caca')
 
 
         result_user = db.user.insert_one({"steamid": steamid, "name": player_name, "profileUrl": profile_url, "avatar": avatar, "country": country, "game_count": games_count})
