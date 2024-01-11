@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 import requests
 from pymongo import MongoClient
 from urllib.parse import quote_plus
 import random
 import json
+from fastapi.responses import JSONResponse
 top100=[10,60,70,80,240,320,340,400,440,550,570,620,730,4000,8930,49520,72850,96000,105600,107410,108600,203160,204360,218230,218620,221100,224260,227300,227940,230410,236390,238960,239140,242760,250900,251570,252490,252950,255710,261550,271590,272060,275390,289070,291550,292030,301520,304050,304930,322330,346110,359550,367520,377160,381210,386360,413150,417910,431960,433850,438100,444090,444200,466240,477160,489520,532210,550650,552990,578080,582010,632360,648800,739630,755790,814380,892970,901583,945360,990080,1046930,1063730,1085660,1086940,1089350,1091500,1097150,1172470,1174180,1203220,1222670,1238810,1240440,1245620,1468810,1517290,1599340,1811260,1938090,1966720]
 
 app = FastAPI()
@@ -93,9 +95,7 @@ async def guess(player_name: str, appid: int):
         db['history'].find_one_and_replace({"player_name": player_name}, {"player_name": player_name, "name": name, "developers": developers, "publishers": publishers, "price": price, "score": score, "genres": genres, "categories": categories, "release": release})
         currentHistory = db['history'].find_one({"player_name": player_name}, {"_id": 0})
 
-
-        print(currentHistory)
-        return json.dumps(currentHistory)
+        return JSONResponse(content=currentHistory)
     else:
         return {"status": "win"}
 
