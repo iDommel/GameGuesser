@@ -215,8 +215,8 @@ async def fill_db_user(steamid: int):
             playtime_forever = game['playtime_forever']
             url_user_game = f'http://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/?appid={appid}&key=EFEC8A77131A5A757FE30442C93005E1&steamid={steamid}'
             response_user_game = requests.get(url_user_game)
-            if response_user.status_code == 200:
-                data = response_user.json()
+            if response_user_game.status_code == 200:
+                data = response_user_game.json()
                 achievements_list = []
                 for achievement in data['playerstats']['achievements']:
                     apiname = achievement['apiname']
