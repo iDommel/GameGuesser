@@ -61,7 +61,7 @@ async def set_current_game(appid: int):
 
 @app.get("/get_current_game")
 async def get_current_game():
-    result = db['current-game'].find_one({})
+    result = db['current-game'].find_one({}, {"_id": 0})
     if result is None:
         raise HTTPException(status_code=404, detail="No current game found")
     else:
