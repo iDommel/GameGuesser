@@ -10,6 +10,7 @@ import Grid from '@mui/material/Unstable_Grid2';
 import CachedIcon from '@mui/icons-material/Cached';
 import IconButton from '@mui/material/IconButton';
 import { error } from 'console';
+import { element } from 'prop-types';
 
 const { Option } = Select;
 
@@ -228,12 +229,50 @@ function App() {
   const filterOption = (input: string, option?: { label: string; value: any }) =>
     (option?.label ?? '').toLowerCase().includes(input.toLowerCase());
 
+
+    const containerStyle = {
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))", // Adjust the minmax values as needed
+      gap: "5px",
+    };
   const FillCardLabels = ({label, labelName, isWin}: FillCardLabelsProps) => {
+    const goodAnswer = label.filter(element => element.answer == true)
+    const badAnswer = label.filter(element => element.answer == false)
+    const badManyItems = badAnswer.length > 6;
+    const goodAnswerManyItems = goodAnswer.length > 6;
+
     return (
-      <Card title={labelName} bordered={false} style={isWin ? {backgroundColor:"green", flexDirection:"row"} : {backgroundColor:"white", flexDirection:"row"}}>
-        {label.map((item, index) => (
-          <p style={item.answer ? {backgroundColor:"green", margin: 5} : {backgroundColor:"red", margin: 5}} key={index}>{item.data}</p>
-        ))}
+      <Card title={labelName} bordered={false} style={isWin ? {backgroundColor:"green"} : {backgroundColor:"white"}}>
+        <div style={containerStyle}>
+          {goodAnswer.map((item, index) => (
+            <p
+              style={{
+                backgroundColor: "green",
+                margin: 5,
+                height: "auto",
+                borderRadius: 20,
+              }}
+              key={index}
+            >
+              {item.data}
+            </p>
+          ))}
+        </div>
+        <div style={containerStyle}>
+          {badAnswer.map((item, index) => (
+            <p
+              style={{
+                backgroundColor: "red",
+                margin: 5,
+                height: "auto",
+                borderRadius: 10,
+              }}
+              key={index}
+            >
+              {item.data}
+            </p>
+          ))}
+        </div>
       </Card>
     )
   }
