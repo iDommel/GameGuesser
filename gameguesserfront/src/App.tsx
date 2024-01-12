@@ -257,11 +257,32 @@ function App() {
           onChange={onChange}
           onSearch={onSearch}
           filterOption={filterOption}
-          options={gamesData}
-          //optionLabelProp="label"
+         // options={gamesData}
+        //  optionLabelProp="label"
           style={{width:"300px"}}
         >
-          
+          {gamesData.map((element:gameType, index: number) => (
+                <Option 
+                  value={element.value}
+                  label={element.label}
+                  requiredAge={element.requiredAge}
+                  price={element.price}
+                  release={element.release}
+                  publishers={element.publishers}
+                  name={element.name}
+                  tags={element.tags}
+                  developers={element.developers}
+                  categories={element.categories} 
+                  appId={element.appId}
+                >
+                  <Space>
+                    <span role="img" aria-label={element.label}>
+                      <img src={element.image} width="60px" height="30px" style={{marginTop:10}}/>
+                    </span>
+                    {element.name}
+                  </Space>
+              </Option>
+          ))}
         </Select>
         <IconButton
             onClick={randomizeAndGetNewGame}
