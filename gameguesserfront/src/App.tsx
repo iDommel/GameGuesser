@@ -113,7 +113,7 @@ function App() {
   const [selectedGames, setSelectedGames] = useState<gameTypeAnswer[] | undefined>(undefined)
   const [gameToguess, setGameToGuess] = useState<gameType | undefined>(undefined)
   const [gamesData, setGamesData] = useState<gameType[]>([])
-
+  const [buttonSentence, setButtonSentence] = useState("Change game to guess")
   const getGames = async () => {
     const dbData = await fetch('http://localhost:8000/games')
     const gamesJson = await dbData.json()
@@ -149,6 +149,10 @@ function App() {
     setGameToGuess(gameJson)
   }
 
+  function changeButtonSentence() {
+    setButtonSentence("Change game to guess")
+  }
+
   const randomizeAndGetNewGame = async () => {
     await fetch('http://localhost:8000/randomize_current_game').then(
       response => response.json()
@@ -157,6 +161,9 @@ function App() {
       getGameToGuess()
     }
     ).catch(error => console.log(error))
+
+    setButtonSentence("Game to guess changed")
+    setInterval(changeButtonSentence, 1000)
   }
 
   useEffect(() => {
@@ -334,6 +341,9 @@ function App() {
             style={{marginLeft:10}}
           >
             <CachedIcon/>
+            <p style={{fontSize:20, marginLeft: 5}}>
+            {buttonSentence}
+            </p>
           </IconButton>
         <div style={{flexDirection:"row"}}>
         </div>
