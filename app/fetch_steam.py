@@ -297,30 +297,29 @@ async def fill_db_user_test(steamid: int):
             url_user_game = f'http://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/?appid={appid}&key=EFEC8A77131A5A757FE30442C93005E1&steamid={steamid}'
             response_user_game = requests.get(url_user_game)
 
-            if response_user_game.status_code == 200:
-                user_game_data = response_user_game.json()
-                achievements_list = []
+    if response_user_game.status_code == 200:
+        user_game_data = response_user_game.json()
+        achievements_documents = []
 
-                if 'achievements' in user_game_data['playerstats']:
-                    for achievement in user_game_data['playerstats']['achievements']:
-                        apiname = achievement['apiname']
-                        achieved = achievement['achieved']
-                        unlocktime = achievement['unlocktime']
-                        achievements_list.append({"apiname": apiname, "achieved": achieved, "unlocktime": unlocktime})
+        if 'achievements' in user_game_data['playerstats']:
+            for achievement in user_game_data['playerstats']['achievements']:
+                apiname = achievement['apiname']
+                achieved = achievement['achieved']
+                unlocktime = achievement['unlocktime']
 
-                db["user-games-test"].insert_one({
-                    "appid": appid,
-                    "playtime_forever": playtime_forever,
-                    "steamid": steamid,
-                    "achievements_list": achievements_list
-                })
+                achievement_document = {
+                    "apiname": apiname,
+                    "achieved": achieved,
+                    "unlocktime": unlocktime
+                }
 
-        db["user-test"].insert_one({
+                achievements_documents.append(achievement_document)
+
+        db["user-games"].insert_one({
+            "appid": appid,
+            "playtime_forever": playtime_forever,
             "steamid": steamid,
-            "name": player_name,
-            "profileUrl": profile_url,
-            "avatar": avatar,
-            "game_count": games_count
+            "achievements_list": achievements_documents
         })
 
     return {"status": "Data fetched and stored successfully"}
