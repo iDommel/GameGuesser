@@ -239,12 +239,13 @@ async def fill_db_user(steamid: int):
             if response_user_game.status_code == 200:
                 data = response_user_game.json()
                 achievements_list = []
-                if 'achievements' in data['playerstats']:
-                    for achievement in data['playerstats']['achievements']:
-                        apiname = achievement['apiname']
-                        achieved = achievement['achieved']
-                        unlocktime = achievement['unlocktime']
-                        achievements_list.append({"apiname": apiname, "achieved": achieved, "unlocktime": unlocktime})
+                for game in achievements_list:
+                    if 'achievements' in data['playerstats']:
+                        for achievement in data['playerstats']['achievements']:
+                            apiname = achievement['apiname']
+                            achieved = achievement['achieved']
+                            unlocktime = achievement['unlocktime']
+                            achievements_list.append({"apiname": apiname, "achieved": achieved, "unlocktime": unlocktime})
             db["user-games"].insert_one({"appid": appid, "playtime_forever": playtime_forever, "steamid": steamid, "achievements_list": achievements_list})
         print(f'caca')
 
@@ -271,3 +272,55 @@ async def compare_achivements(appid: int):
     else:
         print(current_game)
         return JSONResponse(status_code=201, content=achievements_count_by_user)
+    
+@app.get("/fill_db_user_test")
+async def fill_db_user_test(steamid: int):
+    url_games = f'http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=EFEC8A77131A5A757FE30442C93005E1&steamid={steamid}&format=json'
+    url_user = f'http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=EFEC8A77131A5A757FE30442C93005E1&steamids={steamid}'
+    response_games = requests.get(url_games)
+    response_user = requests.get(url_user)
+
+    if response_user.status_code == 200:
+        user_data = response_user.json()
+        steamid = user_data['response']['players'][0]['steamid']
+        player_name = user_data['response']['players'][0]['personaname']
+        profile_url = user_data['response']['players'][0]['profileurl']
+        avatar = user_data['response']['players'][0]['avatarfull']
+
+    if response_games.status_code == 200:
+        games_data = response_games.json()
+        games_count = games_data['response']['game_count']
+
+        for game in games_data['response']['games']:
+            appid = game['appid']
+            playtime_forever = game['playtime_forever']
+            url_user_game = f'http://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/?appid={appid}&key=EFEC8A77131A5A757FE30442C93005E1&steamid={steamid}'
+            response_user_game = requests.get(url_user_game)
+
+            if response_user_game.status_code == 200:
+                user_game_data = response_user_game.json()
+                achievements_list = []
+
+                if 'achievements' in user_game_data['playerstats']:
+                    for achievement in user_game_data['playerstats']['achievements']:
+                        apiname = achievement['apiname']
+                        achieved = achievement['achieved']
+                        unlocktime = achievement['unlocktime']
+                        achievements_list.append({"apiname": apiname, "achieved": achieved, "unlocktime": unlocktime})
+
+                db["user-games-test"].insert_one({
+                    "appid": appid,
+                    "playtime_forever": playtime_forever,
+                    "steamid": steamid,
+                    "achievements_list": achievements_list
+                })
+
+        db["user-test"].insert_one({
+            "steamid": steamid,
+            "name": player_name,
+            "profileUrl": profile_url,
+            "avatar": avatar,
+            "game_count": games_count
+        })
+
+    return {"status": "Data fetched and stored successfully"}
