@@ -270,7 +270,7 @@ function App() {
       </AppBar>
       <header className="App-header">
         <div style={{flexDirection:"column"}}>
-          {selectedGames === undefined ? <p>oui</p> : selectedGames.slice(0).reverse().map((game: gameTypeAnswer, index:number) => (
+          {selectedGames === undefined ? <p>try to guess the game</p> : selectedGames.slice(0).reverse().map((game: gameTypeAnswer, index:number) => (
             <Card title={game.name} bordered={true} style={game.isWin ? styles.winCard : styles.loseCard} key={index}>
               <FillCardLabels label={game.categories} labelName={"categories"} isWin={game.isWin}/>
               <FillCardLabels label={game.developers} labelName={"developers"} isWin={game.isWin}/>
