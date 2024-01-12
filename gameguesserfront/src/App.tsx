@@ -274,6 +274,7 @@ function App() {
                   developers={element.developers}
                   categories={element.categories} 
                   appId={element.appId}
+                  image={element.image}
                 >
                   <Space>
                     <span role="img" aria-label={element.label}>
@@ -304,8 +305,7 @@ function App() {
           {selectedGames === undefined ? <p>try to guess the game</p> : selectedGames.slice(0).reverse().map((game: gameTypeAnswer, index:number) => (
             <Card title={game.name} bordered={true} style={game.isWin ? styles.winCard : styles.loseCard} key={index}>
               <img src={game.image}/>
-
-              <FillCardLabels label={game.categories} labelName={"categories"} isWin={game.isWin}/>
+              <FillCardLabels label={game.tags} labelName={"tags"} isWin={game.isWin}/>
               <FillCardLabels label={game.developers} labelName={"developers"} isWin={game.isWin}/>
               <FillCardLabels label={game.publishers} labelName={"publishers"} isWin={game.isWin}/>
             </Card>
