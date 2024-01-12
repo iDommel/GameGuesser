@@ -1,7 +1,7 @@
 import React, {useState, useEffect} from 'react'
 import logo from './pizza.jpeg';
 import './App.css';
-import { Select, Card } from 'antd';
+import { Select, Card, Space } from 'antd';
 import { define } from 'mime';
 
 import AppBar from '@mui/material/AppBar';
@@ -10,6 +10,8 @@ import Grid from '@mui/material/Unstable_Grid2';
 import CachedIcon from '@mui/icons-material/Cached';
 import IconButton from '@mui/material/IconButton';
 import { error } from 'console';
+
+const { Option } = Select;
 
 interface gameTypeDb {
   appId: number,
@@ -22,6 +24,7 @@ interface gameTypeDb {
   price: string,
   requiredAge: number,
   score: number | null,
+  image: string
 }
 
 interface gameType extends gameTypeDb {
@@ -58,6 +61,7 @@ type gameTypeAnswer = {
   requiredAge: answerNumberType,
   score: number | null,
   isWin: boolean
+  image: string
 }
 
 type FillCardLabelsProps = {
@@ -128,6 +132,7 @@ function App() {
         score: gamesJson[index].score,
         label: gamesJson[index].name,
         value: gamesJson[index].name,
+        image: gamesJson[index].image,
         key: index,
       }
       formattedData.push(data)
@@ -173,6 +178,7 @@ function App() {
         price: searchGame.price,
         requiredAge: compGamesNumbers(Number(searchGame.release), Number(gameToguess.release)),
         score: searchGame.score,
+        image : searchGame.image,
         isWin: true
       }
       return answerData
@@ -188,6 +194,7 @@ function App() {
         price: searchGame.price,
         requiredAge: compGamesNumbers(Number(searchGame.release), Number(gameToguess.release)),
         score: searchGame.score,
+        image : searchGame.image,
         isWin: false
       }
       console.log("answerData : ", answerData)
@@ -241,8 +248,8 @@ function App() {
 
   return (
     <div className="App">
-      <AppBar position="static">
-        <Toolbar variant="dense">
+      <AppBar position="static" >
+        <Toolbar variant="dense" style={{alignContent:"center", justifyContent:"center"}}>
         <Select
           showSearch
           placeholder="Select a person"
@@ -250,9 +257,33 @@ function App() {
           onChange={onChange}
           onSearch={onSearch}
           filterOption={filterOption}
-          options={gamesData}
-          style={{alignSelf:"auto"}}
-        />
+         // options={gamesData}
+        //  optionLabelProp="label"
+          style={{width:"300px"}}
+        >
+          {gamesData.map((element:gameType, index: number) => (
+                <Option 
+                  value={element.value}
+                  label={element.label}
+                  requiredAge={element.requiredAge}
+                  price={element.price}
+                  release={element.release}
+                  publishers={element.publishers}
+                  name={element.name}
+                  tags={element.tags}
+                  developers={element.developers}
+                  categories={element.categories} 
+                  appId={element.appId}
+                >
+                  <Space>
+                    <span role="img" aria-label={element.label}>
+                      <img src={element.image} width="60px" height="30px" style={{marginTop:10}}/>
+                    </span>
+                    {element.name}
+                  </Space>
+              </Option>
+          ))}
+        </Select>
         <IconButton
             onClick={randomizeAndGetNewGame}
             size="large"
@@ -272,6 +303,8 @@ function App() {
         <div style={{flexDirection:"column"}}>
           {selectedGames === undefined ? <p>try to guess the game</p> : selectedGames.slice(0).reverse().map((game: gameTypeAnswer, index:number) => (
             <Card title={game.name} bordered={true} style={game.isWin ? styles.winCard : styles.loseCard} key={index}>
+              <img src={game.image}/>
+
               <FillCardLabels label={game.categories} labelName={"categories"} isWin={game.isWin}/>
               <FillCardLabels label={game.developers} labelName={"developers"} isWin={game.isWin}/>
               <FillCardLabels label={game.publishers} labelName={"publishers"} isWin={game.isWin}/>
