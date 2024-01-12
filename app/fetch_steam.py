@@ -3,6 +3,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import requests
+from bson import json_util
 from pymongo import MongoClient
 from urllib.parse import quote_plus
 import random
@@ -226,7 +227,6 @@ async def fill_db_user(steamid: int):
         player_name = data['response']['players'][0]['personaname']
         profile_url = data['response']['players'][0]['profileurl']
         avatar = data['response']['players'][0]['avatarfull']
-        country = data['response']['players'][0]['loccountrycode']
 
     if response_games.status_code == 200:
         data = response_games.json()
@@ -248,6 +248,26 @@ async def fill_db_user(steamid: int):
             db["user-games"].insert_one({"appid": appid, "playtime_forever": playtime_forever, "steamid": steamid, "achievements_list": achievements_list})
         print(f'caca')
 
-
-        result_user = db.user.insert_one({"steamid": steamid, "name": player_name, "profileUrl": profile_url, "avatar": avatar, "country": country, "game_count": games_count})
+        db.user.insert_one({"steamid": steamid, "name": player_name, "profileUrl": profile_url, "avatar": avatar, "game_count": games_count})
     return {"status": "Data fetched and stored successfully"}
+
+@app.get("/compare_achivements")
+async def compare_achivements(appid: int):
+    current_game = db['user-games'].find({"appid": appid})
+    serialized_data = json_util.dumps(current_game)
+    data = json_util.loads(serialized_data)
+    achievements_count_by_user = {}
+    
+    for user_data in data:
+        steamid = user_data["steamid"]
+        achievements_count = sum(achievement["achieved"] for achievement in user_data["achievements_list"])
+        achievements_count_by_user[steamid] = achievements_count
+        
+    for steamid, count in achievements_count_by_user.items():
+        print(f"SteamID: {steamid}, Nombre d'achievements : {count}")
+
+    if not data: 
+        raise HTTPException(status_code=404, detail="No one has the game")
+    else:
+        print(current_game)
+        return JSONResponse(status_code=201, content=achievements_count_by_user)
