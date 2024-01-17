@@ -1,5 +1,7 @@
 # GameGuesser
 
+## Backend Part :
+
 ## Install & start:
 
 Use the following
@@ -17,3 +19,13 @@ on windows:
 
 ### Run the server:
 `.main.py`
+
+## Front Part
+
+### Install dependencies:
+
+in `gameguesserfront` folder
+`npm install`
+
+### Run the front:
+`npm start`
