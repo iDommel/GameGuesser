@@ -25,7 +25,8 @@ on windows:
 
 ### Install dependencies:
 
-in `gameguesserfront` folder
+in `gameguesserfront` folder :
+
 `npm install`
 
 ### Run the front:
