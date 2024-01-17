@@ -1,10 +1,11 @@
 # GameGuesser
 
-## Backend Part :
-
 ## Install & start:
 
 Use the following
+
+
+## Backend Part :
 
 ### (Optional) create a virtual environment
 `python3 -m venv venv`
